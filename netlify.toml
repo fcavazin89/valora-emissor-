@@ -2,8 +2,17 @@
   command = "pnpm run build"
   publish = ".next"
 
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "9"
+  NEXT_TELEMETRY_DISABLED = "1"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Variáveis de ambiente de produção
+# Configure em: Netlify > Site > Environment Variables
+# NEXT_PUBLIC_API_URL = https://sua-valora-api.com
 
 [[headers]]
   for = "/*"

@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server"
-import { beneficiarios } from "@/lib/mock-data"
+import { apiFetch } from "@/lib/valora-api"
+import { mapBeneficiario } from "@/lib/api-mapper"
 
 export async function GET() {
-  return NextResponse.json({ data: beneficiarios, total: beneficiarios.length })
+  try {
+    const result = await apiFetch<any>("/beneficiarios")
+    const data = (result.data ?? []).map(mapBeneficiario)
+    return NextResponse.json({
+      data,
+      total: result.pagination?.total ?? data.length,
+    })
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Erro ao buscar beneficiários.", data: [], total: 0 },
+      { status: 500 },
+    )
+  }
 }

@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server"
-import { recargas } from "@/lib/mock-data"
+import { apiFetch } from "@/lib/valora-api"
+import { mapRecarga } from "@/lib/api-mapper"
 
 export async function GET() {
-  return NextResponse.json({ data: recargas, total: recargas.length })
+  try {
+    const result = await apiFetch<any>("/recargas")
+    const data = (result.data ?? []).map(mapRecarga)
+    return NextResponse.json({
+      data,
+      total: result.pagination?.total ?? data.length,
+    })
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Erro ao buscar recargas.", data: [], total: 0 },
+      { status: 500 },
+    )
+  }
 }

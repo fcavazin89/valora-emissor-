@@ -1,6 +1,7 @@
 export type Status = "ATIVO" | "INATIVO" | "PENDENTE" | "BLOQUEADO" | "CANCELADO"
 
 export interface Emissor {
+  [key: string]: unknown
   id: string
   nome: string
   cnpj: string
@@ -10,6 +11,7 @@ export interface Emissor {
 }
 
 export interface Programa {
+  [key: string]: unknown
   id: string
   nome: string
   emissor: string
@@ -20,6 +22,7 @@ export interface Programa {
 }
 
 export interface Beneficiario {
+  [key: string]: unknown
   id: string
   nome: string
   cpf: string
@@ -30,6 +33,7 @@ export interface Beneficiario {
 }
 
 export interface Comercio {
+  [key: string]: unknown
   id: string
   razaoSocial: string
   cnpj: string
@@ -41,6 +45,7 @@ export interface Comercio {
 }
 
 export interface Cartao {
+  [key: string]: unknown
   id: string
   numeroMascarado: string
   beneficiario: string
@@ -51,6 +56,7 @@ export interface Cartao {
 }
 
 export interface Credenciamento {
+  [key: string]: unknown
   id: string
   comercio: string
   cnpj: string
@@ -60,6 +66,7 @@ export interface Credenciamento {
 }
 
 export interface Transacao {
+  [key: string]: unknown
   id: string
   cartao: string
   comercio: string
@@ -70,6 +77,7 @@ export interface Transacao {
 }
 
 export interface Recarga {
+  [key: string]: unknown
   id: string
   beneficiario: string
   programa: string
@@ -79,6 +87,7 @@ export interface Recarga {
 }
 
 export interface Saque {
+  [key: string]: unknown
   id: string
   comercio: string
   cnpj: string

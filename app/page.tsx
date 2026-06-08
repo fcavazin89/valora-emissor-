@@ -1,22 +1,18 @@
+"use client"
+
+import useSWR from "swr"
 import { Shell } from "@/components/shell"
 import { StatCard } from "@/components/stat-card"
 import { StatusBadge } from "@/components/status-badge"
 import { TransacoesChart, StatusPie, TopComerciosChart } from "@/components/dashboard-charts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  beneficiarios,
-  cartoes,
-  comercios,
-  emissores,
-  programas,
-  recargas,
-  saques,
-  transacoes,
-} from "@/lib/mock-data"
 import { formatCurrency, formatDate, formatNumber } from "@/lib/nav"
-import { Building2, Layers, Users, CreditCard, ArrowLeftRight, Wallet } from "lucide-react"
+import { Building2, Layers, Users, CreditCard, ArrowLeftRight, Wallet, Loader2 } from "lucide-react"
+import type { Transacao, Recarga, Cartao, Beneficiario, Programa, Emissor, Comercio, Saque } from "@/lib/types"
 
-function buildSeries() {
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+function buildSeries(transacoes: Transacao[]) {
   const days = 30
   const buckets = new Map<string, number>()
   for (let i = days - 1; i >= 0; i--) {
@@ -34,7 +30,7 @@ function buildSeries() {
   return Array.from(buckets, ([dia, valor]) => ({ dia, valor }))
 }
 
-function buildStatusPie() {
+function buildStatusPie(transacoes: Transacao[]) {
   const counts = transacoes.reduce<Record<string, number>>((acc, t) => {
     acc[t.status] = (acc[t.status] ?? 0) + 1
     return acc
@@ -42,7 +38,7 @@ function buildStatusPie() {
   return Object.entries(counts).map(([name, value]) => ({ name, value }))
 }
 
-function buildTopComercios() {
+function buildTopComercios(transacoes: Transacao[]) {
   const totals = new Map<string, number>()
   for (const t of transacoes) {
     if (t.status !== "APROVADA") continue
@@ -54,6 +50,26 @@ function buildTopComercios() {
 }
 
 export default function Page() {
+  const { data: txData } = useSWR<{ data: Transacao[] }>("/api/v1/transacoes", fetcher)
+  const { data: recData } = useSWR<{ data: Recarga[] }>("/api/v1/recargas", fetcher)
+  const { data: carData } = useSWR<{ data: Cartao[] }>("/api/v1/cartoes", fetcher)
+  const { data: benData } = useSWR<{ data: Beneficiario[] }>("/api/v1/beneficiarios", fetcher)
+  const { data: progData } = useSWR<{ data: Programa[] }>("/api/v1/programas", fetcher)
+  const { data: emiData } = useSWR<{ data: Emissor[] }>("/api/v1/emissores", fetcher)
+  const { data: comData } = useSWR<{ data: Comercio[] }>("/api/v1/comercios", fetcher)
+  const { data: saqData } = useSWR<{ data: Saque[] }>("/api/v1/saques", fetcher)
+
+  const transacoes = txData?.data ?? []
+  const recargas = recData?.data ?? []
+  const cartoes = carData?.data ?? []
+  const beneficiarios = benData?.data ?? []
+  const programas = progData?.data ?? []
+  const emissores = emiData?.data ?? []
+  const comercios = comData?.data ?? []
+  const saques = saqData?.data ?? []
+
+  const isLoading = !txData || !recData || !carData || !benData || !progData || !emiData || !comData || !saqData
+
   const volumeAprovado = transacoes
     .filter((t) => t.status === "APROVADA" && t.tipo === "COMPRA")
     .reduce((s, t) => s + t.valor, 0)
@@ -64,6 +80,16 @@ export default function Page() {
   const ultimasTransacoes = [...transacoes]
     .sort((a, b) => +new Date(b.data) - +new Date(a.data))
     .slice(0, 8)
+
+  if (isLoading) {
+    return (
+      <Shell title="Dashboard" description="Carregando indicadores...">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      </Shell>
+    )
+  }
 
   return (
     <Shell title="Dashboard" description="Visão geral do emissor e da operação de benefícios">
@@ -85,13 +111,13 @@ export default function Page() {
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <TransacoesChart data={buildSeries()} />
+            <TransacoesChart data={buildSeries(transacoes)} />
           </div>
-          <StatusPie data={buildStatusPie()} />
+          <StatusPie data={buildStatusPie(transacoes)} />
         </section>
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <TopComerciosChart data={buildTopComercios()} />
+          <TopComerciosChart data={buildTopComercios(transacoes)} />
 
           <Card>
             <CardHeader>

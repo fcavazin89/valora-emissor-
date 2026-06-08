@@ -1,32 +1,46 @@
 import { NextResponse } from "next/server"
-import { programas } from "@/lib/mock-data"
-import type { Programa } from "@/lib/types"
+import { apiFetch } from "@/lib/valora-api"
+import { mapPrograma } from "@/lib/api-mapper"
 
 export async function GET() {
-  return NextResponse.json({ data: programas, total: programas.length })
+  try {
+    const result = await apiFetch<any>("/programas")
+    const data = (result.data ?? []).map(mapPrograma)
+    return NextResponse.json({
+      data,
+      total: result.pagination?.total ?? data.length,
+    })
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Erro ao buscar programas.", data: [], total: 0 },
+      { status: 500 },
+    )
+  }
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as Partial<Programa>
-
-  if (!body.nome || !body.emissor || !body.tipo) {
+  try {
+    const body = (await request.json()) as Record<string, unknown>
+    const payload: Record<string, unknown> = {
+      id_emissor: Number(body.emissor) || 1,
+      nome: body.nome,
+      codigo_programa: `PRG-${Date.now()}`,
+      descricao: body.descricao || `Programa ${body.nome}`,
+      data_inicio: new Date().toISOString().split("T")[0],
+      dia_credito: 5,
+      status: (String(body.status ?? "PENDENTE")).toLowerCase(),
+      valor_base_mensal: 0,
+      periodicidade: "mensal",
+    }
+    const result = await apiFetch<any>("/programas", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+    return NextResponse.json({ data: mapPrograma(result.data ?? {}) }, { status: 201 })
+  } catch (err) {
     return NextResponse.json(
-      { error: "Os campos nome, emissor e tipo são obrigatórios." },
-      { status: 400 },
+      { error: err instanceof Error ? err.message : "Falha ao criar programa." },
+      { status: 500 },
     )
   }
-
-  const novo: Programa = {
-    id: `PRG-${String(programas.length + 1).padStart(4, "0")}`,
-    nome: body.nome,
-    emissor: body.emissor,
-    tipo: body.tipo,
-    status: body.status ?? "PENDENTE",
-    beneficiarios: body.beneficiarios ?? 0,
-    criadoEm: new Date().toISOString(),
-  }
-
-  programas.unshift(novo)
-
-  return NextResponse.json({ data: novo }, { status: 201 })
 }

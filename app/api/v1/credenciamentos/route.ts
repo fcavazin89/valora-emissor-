@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server"
-import { credenciamentos } from "@/lib/mock-data"
+import { apiFetch } from "@/lib/valora-api"
+import { mapCredenciamento } from "@/lib/api-mapper"
 
 export async function GET() {
-  return NextResponse.json({ data: credenciamentos, total: credenciamentos.length })
+  try {
+    const result = await apiFetch<any>("/credenciamentos")
+    const data = (result.data ?? []).map(mapCredenciamento)
+    return NextResponse.json({
+      data,
+      total: result.pagination?.total ?? data.length,
+    })
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Erro ao buscar credenciamentos.", data: [], total: 0 },
+      { status: 500 },
+    )
+  }
 }

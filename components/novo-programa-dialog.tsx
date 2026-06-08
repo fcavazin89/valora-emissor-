@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import useSWR from "swr"
 import { useSWRConfig } from "swr"
 import { Plus, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,8 +24,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { emissores } from "@/lib/mock-data"
-import type { Programa, Status } from "@/lib/types"
+import type { Programa, Status, Emissor } from "@/lib/types"
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 const tipos: Programa["tipo"][] = ["ALIMENTACAO", "REFEICAO", "MOBILIDADE", "SAUDE", "MULTIBENEFICIO"]
 const statusOpcoes: Status[] = ["ATIVO", "PENDENTE", "INATIVO", "BLOQUEADO"]
@@ -39,6 +41,7 @@ const tipoLabel: Record<Programa["tipo"], string> = {
 
 export function NovoProgramaDialog() {
   const { mutate } = useSWRConfig()
+  const { data: emissoresData } = useSWR<{ data: Emissor[] }>("/api/v1/emissores", fetcher)
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -47,6 +50,8 @@ export function NovoProgramaDialog() {
   const [tipo, setTipo] = useState<Programa["tipo"] | "">("")
   const [status, setStatus] = useState<Status>("PENDENTE")
   const [beneficiarios, setBeneficiarios] = useState("")
+
+  const emissores = emissoresData?.data ?? []
 
   function reset() {
     setNome("")
@@ -124,7 +129,7 @@ export function NovoProgramaDialog() {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="emissor">Emissor</Label>
-            <Select value={emissor} onValueChange={setEmissor}>
+            <Select value={emissor} onValueChange={(v) => v !== null && setEmissor(v)}>
               <SelectTrigger id="emissor">
                 <SelectValue placeholder="Selecione o emissor" />
               </SelectTrigger>
